@@ -98,8 +98,8 @@ namespace Blaseball_Twitter_Bot
             int gameendchecker = 0;
             string hometeam = "";
             string awayteam = "";
-            int homescore = 0;
-            int awayscore = 0;
+            float homescore = 0f;
+            float awayscore = 0f;
             int currentinning = 0;
             bool gamecomplete = false;
             string targeturl = $"https://www.blaseball.com/database/gameById/" + $"{gameid[0]}";
@@ -123,9 +123,11 @@ namespace Blaseball_Twitter_Bot
             // find home score
             string[] homescoresplit = gamebyidlog.Split("\"homeScore\":");
             homescore = int.Parse(homescoresplit[1].Split(",")[0]);
+            homescore = (float)Math.Round((decimal)homescore, 1);
             // home score found, now find away score
             string[] awayscoresplit = gamebyidlog.Split("\"awayScore\":");
             awayscore = int.Parse(awayscoresplit[1].Split(",")[0]);
+            awayscore = (float)Math.Round((decimal)awayscore, 1);
             // away score found
             //inning number 
             string[] inningsplit = gamebyidlog.Split("\"inning\":");
@@ -231,64 +233,162 @@ namespace Blaseball_Twitter_Bot
                  } */
         }
 
-        static void StringMaker(int inning, string lastevent, string hometeam, string awayteam, int homescore, int awayscore, bool gamecomplete)
+        static void StringMaker(int inning, string lastevent, string hometeam, string awayteam, float homescore, float awayscore, bool gamecomplete)
         {
             string tweet = "";
+            string desiredteam = File.ReadAllText($"targetteam.txt").Trim();
+            bool isDesiredTeamHome = false;
+            if (desiredteam == hometeam)
+            {
+                isDesiredTeamHome = true;
+            }
             if (!gamecomplete)
             {
                 if (lastevent.ToLower().Contains("outing"))
                 {
-                    if (homescore > awayscore)
+                    if (desiredteam.Contains("Mexico City Wild Wings")) // special stuff for wings Twitter
                     {
-                        tweet = $"Inning {inning} is now an outing. {hometeam} leads {awayteam} by {homescore - awayscore}!";
+                        if (isDesiredTeamHome)
+                        {
+                            if (homescore > awayscore) // if wings are home and winning
+                            {
+                                tweet = $"Inning {inning} is now an outing. Wings lead the {awayteam} by {homescore - awayscore}!";
+                            }
+                            else if (awayscore > homescore) // if wings are home and losing
+                            {
+                                tweet = $"Inning {inning} is now an outing. {awayteam} lead the Wings by {awayscore - homescore}.";
+                            }
+                            else if (awayscore == homescore && isDesiredTeamHome) // if wings home and tied
+                            {
+                                tweet = $"Inning {inning} is now an outing. Wings and {awayteam} tied at {awayscore}!";
+                            }
+                        }
+                        else if (!isDesiredTeamHome)
+                        {
+                            if (awayscore > homescore) // if wings are away and winning
+                            {
+                                tweet = $"Inning {inning} is now an outing. Wings lead the {hometeam} by {awayscore - homescore}.";
+                            }
+                            else if (homescore > awayscore) // if wings are away and losing
+                            {
+                                tweet = $"Inning {inning} is now an outing. Wings trail the {hometeam} by {homescore - awayscore}.";
+                            }
+                            else if (awayscore == homescore) // if wings away and tied
+                            {
+                                tweet = $"Inning {inning} is now an outing. Wings and {hometeam} tied at {awayscore}!";
+                            }
+                        }
                     }
-                    else if (awayscore > homescore)
+                    else // outings for non wings teams
                     {
-                        tweet = $"Inning {inning} is now an outing. {awayteam} leads {hometeam} by {awayscore - homescore}!";
-                    }
-                    else
-                    {
-                        tweet = $"Inning {inning} is now an outing. {awayteam} and {hometeam} tied at {awayscore}!";
+                        if (homescore > awayscore)
+                        {
+                            tweet = $"Inning {inning} is now an outing. {hometeam} leads {awayteam} by {homescore - awayscore}!";
+                        }
+                        else if (awayscore > homescore)
+                        {
+                            tweet = $"Inning {inning} is now an outing. {awayteam} leads {hometeam} by {awayscore - homescore}!";
+                        }
+                        else
+                        {
+                            tweet = $"Inning {inning} is now an outing. {awayteam} and {hometeam} tied at {awayscore}!";
+                        }
                     }
                 }
-                else if (lastevent.Contains("Moist Talkers"))
+                else if (lastevent.ToLower().Contains("")) // template for moar events
                 {
-                    tweet = $"{lastevent}";
+
                 }
+                
             }
-            else
+            else // if game is complete, does this stuff
             {
                 if (inning == 9)
                 {
-                    if (awayscore > homescore)
+                    if (desiredteam.Contains("Mexico City Wild Wings")) // special case for wings Bot, feel free to customize
                     {
-                        tweet = $"{awayteam} win over {hometeam} with a final score of {awayscore} to {homescore}!";
-                    }
-                    else if (homescore > awayscore)
-                    {
-                        tweet = $"{hometeam} win over {awayteam} with a final score of {homescore} to {awayscore}!";
+                        if (isDesiredTeamHome)
+                        {
+                            if (homescore > awayscore) // if wings win and are home
+                            {
+                                tweet = $"WINGS WINNN! Final score:\nWings: {homescore}\n{awayteam}: {awayscore}"; // could add how good our pitcher did or something here, just adding basic stuff at 2am tho lol
+                            }
+                            else if (homescore > awayscore) // if wings lose and are home
+                            {
+                                tweet = $"Wings lose to the {awayteam}. Final score:\nWings: {homescore}\n{awayteam}: {awayscore}";
+                            }
+                        }
+                        else if (!isDesiredTeamHome)
+                        {
+                            if (awayscore > homescore) // if wings win while away
+                            {
+                                tweet = $"WINGS WIN ON THE ROAD! Final score:\nWings: {awayscore}\n{hometeam}: {homescore}";
+                            }
+                            else if (awayscore < homescore) // if wings lose while away
+                            {
+                                tweet = $"Wings lose to the {hometeam}. Final score:\nWings: {awayscore}\n{hometeam}:{homescore}";
+                            }
+                        }
                     }
                     else
                     {
-                        tweet = $"[ Bot attempted to post a game that ended in a tie so it's posting this tweet instead. ]";
+                        if (awayscore > homescore)
+                        {
+                            tweet = $"{awayteam} win over {hometeam} with a final score of {awayscore} to {homescore}!";
+                        }
+                        else if (homescore > awayscore)
+                        {
+                            tweet = $"{hometeam} win over {awayteam} with a final score of {homescore} to {awayscore}!";
+                        }
+                        else
+                        {
+                            tweet = $"[ Bot attempted to post a game that ended in a tie so it's posting this tweet instead. ]";
+                        }
                     }
+                    
                 }
                 else if (inning > 9)
                 {
-                    if (awayscore > homescore)
+                    if (isDesiredTeamHome)
                     {
-                        tweet = $"{awayteam} win over {hometeam} in {inning}s with a final score of {awayscore} to {homescore}!";
+                        if (homescore > awayscore) // wings win at home during extra innings
+                        {
+                            tweet = $"WINGS WINNN in {inning} innings over the {awayteam}. Final score:\nWings:{homescore}\n{awayteam}:{awayscore}";
+                        }
+                        else if (homescore < awayscore) // wings lose at home during extra innings
+                        {
+                            tweet = $"Wings lose to the {awayteam} in {inning} innings. Final score:\nWings:{homescore}\n{awayteam}:{awayscore}";
+                        }
                     }
-                    else if (homescore > awayscore)
+                    else if (!isDesiredTeamHome)
                     {
-                        tweet = $"{hometeam} win over {awayteam} in {inning}s with a final score of {homescore} to {awayscore}!";
+                        if (awayscore > homescore) // wings win as away team in extra innings
+                        {
+                            tweet = $"WINGS WINNN in {inning} innings over the {hometeam}. Final score:\nWings:{awayscore}\n{hometeam}:{homescore}";
+                        }
+                        else if (awayscore < homescore) // wings lose as away in extra innings
+                        {
+                            tweet = $"Wings lose to the {awayteam} in {inning} innings. Final score:\nWings:{awayscore}\n{hometeam}:{homescore}";
+                        }
                     }
-                    else
+                    else // general OT win messages if not a wings team
                     {
-                        tweet = $"[ Bot attempted to post a game that ended in a tie so it's posting this tweet instead. ]";
+                        if (awayscore > homescore)
+                        {
+                            tweet = $"{awayteam} win over {hometeam} in {inning} innings with a final score of {awayscore} to {homescore}!";
+                        }
+                        else if (homescore > awayscore)
+                        {
+                            tweet = $"{hometeam} win over {awayteam} in {inning} innings with a final score of {homescore} to {awayscore}!";
+                        }
+                        else
+                        {
+                            tweet = $"[ Bot attempted to post a game that ended in a tie so it's posting this tweet instead. ]";
+                        }
                     }
+                    
                 }
-                
+
                 Console.WriteLine(tweet);
                 Console.WriteLine(gamecomplete);
                 Tweeter(tweet);
@@ -308,8 +408,8 @@ namespace Blaseball_Twitter_Bot
             Process.Start(new ProcessStartInfo(authenticationRequest.AuthorizationURL)
             {
                 UseShellExecute = true
-            }) ;
-           
+            });
+
             Console.WriteLine("Please enter the PIN from the URL on the target account.");
             File.WriteAllText("secure/pin.txt", Console.ReadLine());
             string pinCode = File.ReadAllText("secure/pin.txt");
@@ -367,10 +467,10 @@ namespace Blaseball_Twitter_Bot
 
                 // Ask the user to enter the pin code given by Twitter
                 pinCode = File.ReadAllText("secure/pin.txt");
-        //        File.WriteAllText("secure/pin.txt", $"{pinCode}");
+                //        File.WriteAllText("secure/pin.txt", $"{pinCode}");
 
                 // With this pin code it is now possible to get the credentials back from Twitter
-          //      var userCredentials = await appClient.Auth.RequestCredentialsFromVerifierCodeAsync(pinCode, authenticationRequest);
+                //      var userCredentials = await appClient.Auth.RequestCredentialsFromVerifierCodeAsync(pinCode, authenticationRequest);
 
                 // You can now save those credentials or use them as followed
                 token = File.ReadAllLines("secure/usercredentials.txt")[0];
@@ -393,9 +493,9 @@ namespace Blaseball_Twitter_Bot
                     // Other system exceptions like SocketExcepti
                 }
 
-            //    File.WriteAllText("secure/pin.txt", $"{pinCode}");
-              //  Thread.Sleep(100);
-               // pinCode = File.ReadAllText("secure/pin.txt");
+                //    File.WriteAllText("secure/pin.txt", $"{pinCode}");
+                //  Thread.Sleep(100);
+                // pinCode = File.ReadAllText("secure/pin.txt");
             }
         }
         static void CreateConfig(string configname)
