@@ -6,4 +6,8 @@
     <RootNamespace>Blaseball_Twitter_Bot</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="TweetinviAPI" Version="5.0.3" />
+  </ItemGroup>
+
 </Project>

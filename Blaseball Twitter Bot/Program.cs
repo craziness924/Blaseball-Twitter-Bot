@@ -2,12 +2,16 @@
 using System.Net;
 using System.IO;
 using System.Threading;
+using Tweetinvi;
+using System.Threading.Tasks;
+using System.Diagnostics;
+using Tweetinvi.Exceptions;
 
 namespace Blaseball_Twitter_Bot
 {
     class Program
     {
-        static void Main()
+        static async Task Main()
         {
             string downloadedsimData = "";
             string configname = "targetteam.txt";
@@ -17,7 +21,12 @@ namespace Blaseball_Twitter_Bot
             string[] simDataSeasonSplit = new[] { "" };
             int gameday = 0;
             int season = 0;
-            //   CreateConfig(configname);
+            int authentications = 0;
+            CreateConfig(configname);
+            if (authentications < 1)
+            {
+                await TwitterAuth();
+            }
             Thread.Sleep(100); // sleep to make sure the config gets made
             string[] configtext = File.ReadAllLines($"{configname}");
             Console.WriteLine("Press enter to start searching for the inputted team's current game.");
@@ -33,10 +42,8 @@ namespace Blaseball_Twitter_Bot
             simDataSeasonSplit = downloadedsimData.Split("\"season\":");
             string[] simseasonsplit = simDataSeasonSplit[1].Split(",");
             season = int.Parse(simseasonsplit[0]);
-
             // end season getter
             Console.WriteLine($"Day: {gameday}\nSeason: {season}");
-            Console.ReadKey();
             client.Proxy = null;
             string targeturl = $"https://www.blaseball.com/database/games?day={gameday}&season={season}";
             string walter = client.DownloadString(targeturl);
@@ -45,7 +52,7 @@ namespace Blaseball_Twitter_Bot
             string gameinfo = findingteaminfo[0];
             string[] findingid = gameinfo.Split("\"id\":\"");
         tryidagain:
-            if (playfinderindex < findingid.Length - 1) // tries to find the string that contains the team name as well as a supposed game ID. it should work but idk how blaseball works
+            if (playfinderindex < findingid.Length - 1) // tries to find the string that contains the team name as well as the game id. probably not necessary but it doesn't break anything
             {
                 if (!findingid[playfinderindex].Contains($"{desiredteam.ToLower()}"))
                 {
@@ -107,9 +114,11 @@ namespace Blaseball_Twitter_Bot
             // find home team
             string[] hometeamsplit = gamebyidlog.Split("\"homeTeamName\":");
             hometeam = hometeamsplit[1].Split(",")[0];
+            hometeam = hometeam.Split("\"")[1];
             //home team found, now find away team
             string[] awayteamsplit = gamebyidlog.Split("\"awayTeamName\":");
             awayteam = awayteamsplit[1].Split(",")[0];
+            awayteam = awayteam.Split("\"")[1];
             //away team found
             // find home score
             string[] homescoresplit = gamebyidlog.Split("\"homeScore\":");
@@ -143,7 +152,7 @@ namespace Blaseball_Twitter_Bot
                 {
                     lasteventsimilaritycheck = lastevent[0];
                     Console.WriteLine($"{lastevent[0]}");
-                    Tweeter(currentinning, lastevent[0], hometeam, awayteam, homescore, awayscore, gamecomplete);
+                    StringMaker(currentinning, lastevent[0], hometeam, awayteam, homescore, awayscore, gamecomplete);
                     goto anotherone;
                 }
             }
@@ -155,7 +164,7 @@ namespace Blaseball_Twitter_Bot
                     Console.WriteLine();
                     Main();
                 }
-                Tweeter(currentinning, lastevent[0], hometeam, awayteam, homescore, awayscore, gamecomplete);
+                StringMaker(currentinning, lastevent[0], hometeam, awayteam, homescore, awayscore, gamecomplete);
                 goto anotherone;
             }
 
@@ -222,12 +231,12 @@ namespace Blaseball_Twitter_Bot
                  } */
         }
 
-        static void Tweeter(int inning, string lastevent, string hometeam, string awayteam, int homescore, int awayscore, bool gamecomplete)
+        static void StringMaker(int inning, string lastevent, string hometeam, string awayteam, int homescore, int awayscore, bool gamecomplete)
         {
             string tweet = "";
             if (!gamecomplete)
             {
-                if (lastevent.ToLower().Contains(","))
+                if (lastevent.ToLower().Contains("outing"))
                 {
                     if (homescore > awayscore)
                     {
@@ -235,48 +244,207 @@ namespace Blaseball_Twitter_Bot
                     }
                     else if (awayscore > homescore)
                     {
-                        tweet = $"Inning {inning} is now an outing. {awayteam} leads {hometeam} by {awayscore - homescore}";
+                        tweet = $"Inning {inning} is now an outing. {awayteam} leads {hometeam} by {awayscore - homescore}!";
                     }
                     else
                     {
                         tweet = $"Inning {inning} is now an outing. {awayteam} and {hometeam} tied at {awayscore}!";
                     }
                 }
-                else if (lastevent.Contains("whatever")) ;
+                else if (lastevent.Contains("Moist Talkers"))
                 {
-
+                    tweet = $"{lastevent}";
                 }
             }
             else
             {
-                if (awayscore > homescore)
+                if (inning == 9)
                 {
-                    tweet = $"{awayteam} win over {hometeam} with a final of {awayscore} to {homescore}!";
+                    if (awayscore > homescore)
+                    {
+                        tweet = $"{awayteam} win over {hometeam} with a final score of {awayscore} to {homescore}!";
+                    }
+                    else if (homescore > awayscore)
+                    {
+                        tweet = $"{hometeam} win over {awayteam} with a final score of {homescore} to {awayscore}!";
+                    }
+                    else
+                    {
+                        tweet = $"[ Bot attempted to post a game that ended in a tie so it's posting this tweet instead. ]";
+                    }
                 }
-                else if (homescore > awayscore)
+                else if (inning > 9)
                 {
-                    tweet = $"{hometeam} win over {awayteam} with a final score of {homescore} to {awayscore}!";
+                    if (awayscore > homescore)
+                    {
+                        tweet = $"{awayteam} win over {hometeam} in {inning}s with a final score of {awayscore} to {homescore}!";
+                    }
+                    else if (homescore > awayscore)
+                    {
+                        tweet = $"{hometeam} win over {awayteam} in {inning}s with a final score of {homescore} to {awayscore}!";
+                    }
+                    else
+                    {
+                        tweet = $"[ Bot attempted to post a game that ended in a tie so it's posting this tweet instead. ]";
+                    }
                 }
-                else
-                {
-                    tweet = $"[ Bot attempted to post a game that ended in a tie so it's posting this tweet instead. ]";
-                }
+                
+                Console.WriteLine(tweet);
+                Console.WriteLine(gamecomplete);
+                Tweeter(tweet);
+                Thread.Sleep(Timeout.Infinite);
             }
             Console.WriteLine(tweet);
             Console.WriteLine(gamecomplete);
+            Thread.Sleep(Timeout.Infinite);
         }
-        /*
+
+        static async Task TwitterAuth()
+        {
+            string consumerkey = File.ReadAllText("secure/consumerkey.txt").Trim();
+            string consumerkeysecret = File.ReadAllText("secure/consumersecretkey.txt").Trim();
+            var appClient = new TwitterClient($"{consumerkey}", $"{consumerkeysecret}");
+            var authenticationRequest = await appClient.Auth.RequestAuthenticationUrlAsync();
+            Process.Start(new ProcessStartInfo(authenticationRequest.AuthorizationURL)
+            {
+                UseShellExecute = true
+            }) ;
+           
+            Console.WriteLine("Please enter the PIN from the URL on the target account.");
+            File.WriteAllText("secure/pin.txt", Console.ReadLine());
+            string pinCode = File.ReadAllText("secure/pin.txt");
+            var userCredentials = await appClient.Auth.RequestCredentialsFromVerifierCodeAsync(pinCode, authenticationRequest);
+            Thread.Sleep(50);
+            File.WriteAllText("secure/usercredentials.txt", $"{userCredentials.AccessToken}\n{userCredentials.AccessTokenSecret}");
+        }
+        static async Task Tweeter(string tweet)
+        {
+            string consumerkey = File.ReadAllText("secure/consumerkey.txt").Trim();
+            string consumerkeysecret = File.ReadAllText("secure/consumersecretkey.txt").Trim();
+            string token = File.ReadAllText("secure/token.txt").Trim();
+            string tokensecret = File.ReadAllText("secure/tokensecret.txt").Trim();
+            Console.WriteLine("Prolly about to post tweet wanna do that?");
+            if (Console.ReadLine().ToLower().Contains("yes"))
+            {
+                string pinCode = "";
+                // Create a client for your app
+                var appClient = new TwitterClient($"{consumerkey}", $"{consumerkeysecret}");
+
+                // Start the authentication process
+                var authenticationRequest = await appClient.Auth.RequestAuthenticationUrlAsync();
+
+
+                // Go to the URL so that Twitter authenticates the user and gives him a PIN code.
+                /*      if (File.Exists("secure/pin.txt"))
+                      {
+                          if (1 == 1)
+                          {
+                              Process.Start(new ProcessStartInfo(authenticationRequest.AuthorizationURL)
+                              {
+                                  UseShellExecute = true
+                              });
+                              Console.WriteLine("Please enter the code and press enter.");
+                              pinCode = Console.ReadLine();
+                              File.WriteAllText("secure/pin.txt", pinCode);
+                          }
+                          /*       else
+                                 {
+                                     pinCode = File.ReadAllText("secure/pin.txt");
+                                 }
+
+                             }
+                             else
+                             {
+                                 Process.Start(new ProcessStartInfo(authenticationRequest.AuthorizationURL)
+                                 {
+                                     UseShellExecute = true
+                                 });
+                                 Console.WriteLine("Please enter pin code and hit enter.");
+                                 pinCode = Console.ReadLine();
+                                 File.WriteAllText("secure/pin.txt", $"{pinCode}");
+                             } */
+
+
+                // Ask the user to enter the pin code given by Twitter
+                pinCode = File.ReadAllText("secure/pin.txt");
+        //        File.WriteAllText("secure/pin.txt", $"{pinCode}");
+
+                // With this pin code it is now possible to get the credentials back from Twitter
+          //      var userCredentials = await appClient.Auth.RequestCredentialsFromVerifierCodeAsync(pinCode, authenticationRequest);
+
+                // You can now save those credentials or use them as followed
+                token = File.ReadAllLines("secure/usercredentials.txt")[0];
+                tokensecret = File.ReadAllLines("secure/usercredentials.txt")[1];
+                var userClient = new TwitterClient($"{consumerkey}", $"{consumerkeysecret}", $"{token}", $"{tokensecret}");
+                var user = await userClient.Users.GetAuthenticatedUserAsync();
+
+                Console.WriteLine("Congratulation you have authenticated the user: " + user);
+
+                try
+                {
+                    await userClient.Tweets.PublishTweetAsync($"{tweet}");
+                }
+                catch (TwitterException e)
+                {
+                    Console.WriteLine(e.ToString());
+                }
+                catch (Exception e)
+                {
+                    // Other system exceptions like SocketExcepti
+                }
+
+            //    File.WriteAllText("secure/pin.txt", $"{pinCode}");
+              //  Thread.Sleep(100);
+               // pinCode = File.ReadAllText("secure/pin.txt");
+            }
+        }
         static void CreateConfig(string configname)
         {
-            if (!File.Exists(configname)) ;
+            if (!File.Exists(configname))
             {
                 Console.WriteLine("Config file not found or incorrect text. Creating new config file...");
                 File.WriteAllText(configname, "Mexico City Wild Wings");
                 Console.WriteLine();
                 Console.WriteLine("Config file created. Please enter the exact team name of the team you want to find on the first line.");
             }
-
-        } */
+            if (!File.Exists("secure/consumerkey.txt"))
+            {
+                Directory.CreateDirectory("secure");
+                File.Create("secure/consumerkey.txt").Close();
+                Console.WriteLine();
+                Console.WriteLine("Twitter consumer key config file created.");
+            }
+            if (!File.Exists("secure/consumersecretkey.txt"))
+            {
+                Directory.CreateDirectory("secure");
+                File.Create("secure/consumersecretkey.txt").Close();
+                Console.WriteLine();
+                Console.WriteLine("Twitter secret consumer key config file created.");
+            }
+            if (!File.Exists("secure/token.txt"))
+            {
+                Directory.CreateDirectory("secure");
+                File.Create("secure/token.txt").Close();
+                Console.WriteLine();
+                Console.WriteLine("Twitter token config file created.");
+            }
+            if (!File.Exists("secure/tokensecret.txt"))
+            {
+                Directory.CreateDirectory("secure");
+                File.Create("secure/tokensecret.txt").Close();
+                Console.WriteLine();
+                Console.WriteLine("Twitter secret token config file created.");
+            }
+            if (!File.Exists("secure/pin.txt"))
+            {
+                Directory.CreateDirectory("secure");
+                File.Create("secure/pin.txt").Close();
+                Console.WriteLine();
+                Console.WriteLine("OAuth Pin config file created. There is no need to edit this file.");
+            }
+        }
     }
 }
+
+
 
