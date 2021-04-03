@@ -8,10 +8,16 @@ using System.Diagnostics;
 using Tweetinvi.Exceptions;
 
 namespace Blaseball_Twitter_Bot
-{
+{// finding the right game seems very broken
     class Program
     {
         static async Task Main()
+        {
+            GameSetup(); // temporary so I dont auth every test session
+           // await TwitterAuth();
+        }
+
+        static async Task GameSetup()
         {
             string downloadedsimData = "";
             string configname = "targetteam.txt";
@@ -19,14 +25,9 @@ namespace Blaseball_Twitter_Bot
             var client = new WebClient();
             string[] simDataDaySplit = new[] { "" };
             string[] simDataSeasonSplit = new[] { "" };
-            int gameday = 0;
-            int season = 0;
-            int authentications = 0;
-            CreateConfig(configname);
-            if (authentications < 1)
-            {
-                await TwitterAuth();
-            }
+            int gameday = 13;
+            int season = 13;
+
             Thread.Sleep(100); // sleep to make sure the config gets made
             string[] configtext = File.ReadAllLines($"{configname}");
             Console.WriteLine("Press enter to start searching for the inputted team's current game.");
@@ -34,14 +35,14 @@ namespace Blaseball_Twitter_Bot
             Console.WriteLine("Starting search...");
             // find current day of the season
             downloadedsimData = client.DownloadString("https://www.blaseball.com/database/simulationData");
-            simDataDaySplit = downloadedsimData.Split("\"day\":");
-            string[] simdaysplit = simDataDaySplit[1].Split(",");
-            gameday = int.Parse(simdaysplit[0]);
-            // end day getter
-            // find current season of the season
-            simDataSeasonSplit = downloadedsimData.Split("\"season\":");
-            string[] simseasonsplit = simDataSeasonSplit[1].Split(",");
-            season = int.Parse(simseasonsplit[0]);
+            /*      simDataDaySplit = downloadedsimData.Split("\"day\":");
+                  string[] simdaysplit = simDataDaySplit[1].Split(",");
+                  gameday = int.Parse(simdaysplit[0]);
+                  // end day getter
+                  // find current season of the season
+                  simDataSeasonSplit = downloadedsimData.Split("\"season\":");
+                  string[] simseasonsplit = simDataSeasonSplit[1].Split(",");
+                  season = int.Parse(simseasonsplit[0]); */
             // end season getter
             Console.WriteLine($"Day: {gameday}\nSeason: {season}");
             client.Proxy = null;
@@ -49,9 +50,11 @@ namespace Blaseball_Twitter_Bot
             string walter = client.DownloadString(targeturl);
             string desiredteam = $"{configtext[0].Trim()}";
             string[] findingteaminfo = walter.Split($"\"homeTeamNickname\":");
-            string gameinfo = findingteaminfo[0];
-            string[] findingid = gameinfo.Split("\"id\":\"");
+               string gameinfo = findingteaminfo[0];
+            string[] findingid = findingteaminfo[0].Split("\"id\":\"");
+            findingid = findingteaminfo[0].Split("\"isTitleMatch\"");
         tryidagain:
+            
             if (playfinderindex < findingid.Length - 1) // tries to find the string that contains the team name as well as the game id. probably not necessary but it doesn't break anything
             {
                 if (!findingid[playfinderindex].Contains($"{desiredteam.ToLower()}"))
@@ -94,8 +97,8 @@ namespace Blaseball_Twitter_Bot
             string gameinfo = "";
             string[] updatesplit = new[] { "" };
             string[] lastevent = new[] { "" };
-            int similaritycounter = 0;
-            int gameendchecker = 0;
+            //     int similaritycounter = 0;
+            //   int gameendchecker = 0;
             string hometeam = "";
             string awayteam = "";
             float homescore = 0f;
@@ -104,6 +107,8 @@ namespace Blaseball_Twitter_Bot
             bool gamecomplete = false;
             string targeturl = $"https://www.blaseball.com/database/gameById/" + $"{gameid[0]}";
             var eventclient = new WebClient();
+            string homePitcher = "";
+            string awayPitcher = "";
             eventclient.Proxy = null;
         anotherone:
             gamebyidlog = eventclient.DownloadString(targeturl);
@@ -138,9 +143,17 @@ namespace Blaseball_Twitter_Bot
             gamecomplete = bool.Parse(gamecompletesplit[1].Split(",")[0]);
             // gamecomplete = true; // fake completon state for testing reasons
             // game completion checked
-            Console.WriteLine($"Home: {hometeam}\nAway: {awayteam}\nHome Score: {homescore}\nAway Score: {awayscore}");
-            Console.ReadKey();
-            string endtimequestion = Console.ReadLine().ToLower();
+            // start pitching finders
+            string[] homePitcherSplit = gamebyidlog.Split("\"homePitcherName\":");
+            homePitcher = homePitcherSplit[1].Split(",")[0];
+            homePitcher = homePitcher.Split("\"")[1];
+
+            string[] awayPitcherSplit = gamebyidlog.Split("\"awayPitcherName\":");
+            awayPitcher = awayPitcherSplit[1].Split(",")[0];
+            awayPitcher = awayPitcher.Split("\"")[1];
+            // end pitching finders
+            Console.WriteLine($"Home: {hometeam}\nAway: {awayteam}\nHome Score: {homescore}\nAway Score: {awayscore}\nHome Pitcher: {homePitcher}\nAway Pitcher: {awayPitcher}");
+
             if (!gamecomplete)
             {
                 if (lastevent[0].ToLower().Equals(lasteventsimilaritycheck.ToLower()))
@@ -154,20 +167,19 @@ namespace Blaseball_Twitter_Bot
                 {
                     lasteventsimilaritycheck = lastevent[0];
                     Console.WriteLine($"{lastevent[0]}");
-                    StringMaker(currentinning, lastevent[0], hometeam, awayteam, homescore, awayscore, gamecomplete);
+                    StringMaker(currentinning, lastevent[0], hometeam, awayteam, homescore, awayscore, gamecomplete, awayPitcher, homePitcher);
                     goto anotherone;
                 }
             }
             else
             {
-                if (endtimequestion.Contains("end"))
-                {
-                    Console.WriteLine("Returning to start.");
-                    Console.WriteLine();
-                    Main();
-                }
-                StringMaker(currentinning, lastevent[0], hometeam, awayteam, homescore, awayscore, gamecomplete);
-                goto anotherone;
+                /*          if (endtimequestion.Contains("end"))
+                          {
+                              Console.WriteLine("Returning to start.");
+                              Console.WriteLine();
+                              Main();
+                          } */
+                StringMaker(currentinning, lastevent[0], hometeam, awayteam, homescore, awayscore, gamecomplete, awayPitcher, homePitcher);
             }
 
 
@@ -233,11 +245,12 @@ namespace Blaseball_Twitter_Bot
                  } */
         }
 
-        static void StringMaker(int inning, string lastevent, string hometeam, string awayteam, float homescore, float awayscore, bool gamecomplete)
+        static void StringMaker(int inning, string lastevent, string hometeam, string awayteam, float homescore, float awayscore, bool gamecomplete, string awaypitcher, string homepitcher)
         {
             string tweet = "";
             string desiredteam = File.ReadAllText($"targetteam.txt").Trim();
             bool isDesiredTeamHome = false;
+            lastevent = "outing";
             if (desiredteam == hometeam)
             {
                 isDesiredTeamHome = true;
@@ -299,7 +312,7 @@ namespace Blaseball_Twitter_Bot
                 {
 
                 }
-                
+
             }
             else // if game is complete, does this stuff
             {
@@ -311,22 +324,22 @@ namespace Blaseball_Twitter_Bot
                         {
                             if (homescore > awayscore) // if wings win and are home
                             {
-                                tweet = $"WINGS WINNN! Final score:\nWings: {homescore}\n{awayteam}: {awayscore}"; // could add how good our pitcher did or something here, just adding basic stuff at 2am tho lol
+                                tweet = $"WINGS WIN!\nFinal score:\nWings ({homepitcher}): {homescore}\n{awayteam} ({awaypitcher}): {awayscore}"; // could add how good our pitcher did or something here
                             }
-                            else if (homescore > awayscore) // if wings lose and are home
+                            else if (homescore < awayscore) // if wings lose and are home
                             {
-                                tweet = $"Wings lose to the {awayteam}. Final score:\nWings: {homescore}\n{awayteam}: {awayscore}";
+                                tweet = $"Wings lose to the {awayteam}. \nFinal score:\nWings ({homepitcher}): {homescore}\n{awayteam} ({awaypitcher}): {awayscore}";
                             }
                         }
                         else if (!isDesiredTeamHome)
                         {
                             if (awayscore > homescore) // if wings win while away
                             {
-                                tweet = $"WINGS WIN ON THE ROAD! Final score:\nWings: {awayscore}\n{hometeam}: {homescore}";
+                                tweet = $"WINGS WIN! \nFinal score:\nWings ({awaypitcher}): {awayscore}\n{hometeam} ({homepitcher}): {homescore}";
                             }
                             else if (awayscore < homescore) // if wings lose while away
                             {
-                                tweet = $"Wings lose to the {hometeam}. Final score:\nWings: {awayscore}\n{hometeam}:{homescore}";
+                                tweet = $"Wings lose to the {hometeam}. \nFinal score:\nWings ({awaypitcher}): {awayscore}\n{hometeam} ({homepitcher}):{homescore}";
                             }
                         }
                     }
@@ -345,7 +358,7 @@ namespace Blaseball_Twitter_Bot
                             tweet = $"[ Bot attempted to post a game that ended in a tie so it's posting this tweet instead. ]";
                         }
                     }
-                    
+
                 }
                 else if (inning > 9)
                 {
@@ -353,22 +366,22 @@ namespace Blaseball_Twitter_Bot
                     {
                         if (homescore > awayscore) // wings win at home during extra innings
                         {
-                            tweet = $"WINGS WINNN in {inning} innings over the {awayteam}. Final score:\nWings:{homescore}\n{awayteam}:{awayscore}";
+                            tweet = $"WINGS WINNN in {inning} innings over the {awayteam}. \nFinal score:\nWings:{homescore}\n{awayteam}:{awayscore}";
                         }
                         else if (homescore < awayscore) // wings lose at home during extra innings
                         {
-                            tweet = $"Wings lose to the {awayteam} in {inning} innings. Final score:\nWings:{homescore}\n{awayteam}:{awayscore}";
+                            tweet = $"Wings lose to the {awayteam} in {inning} innings. \nFinal score:\nWings:{homescore}\n{awayteam}:{awayscore}";
                         }
                     }
                     else if (!isDesiredTeamHome)
                     {
                         if (awayscore > homescore) // wings win as away team in extra innings
                         {
-                            tweet = $"WINGS WINNN in {inning} innings over the {hometeam}. Final score:\nWings:{awayscore}\n{hometeam}:{homescore}";
+                            tweet = $"WINGS WIN in {inning} innings over the {hometeam}. \nFinal score:\nWings:{awayscore}\n{hometeam}:{homescore}";
                         }
                         else if (awayscore < homescore) // wings lose as away in extra innings
                         {
-                            tweet = $"Wings lose to the {awayteam} in {inning} innings. Final score:\nWings:{awayscore}\n{hometeam}:{homescore}";
+                            tweet = $"Wings lose to the {awayteam} in {inning} innings. \nFinal score:\nWings:{awayscore}\n{hometeam}:{homescore}";
                         }
                     }
                     else // general OT win messages if not a wings team
@@ -385,37 +398,58 @@ namespace Blaseball_Twitter_Bot
                         {
                             tweet = $"[ Bot attempted to post a game that ended in a tie so it's posting this tweet instead. ]";
                         }
-                    }
-                    
-                }
 
-                Console.WriteLine(tweet);
-                Console.WriteLine(gamecomplete);
+                    }
+
+                } 
+            }
+            if (!tweet.Equals(""))
+            {
                 Tweeter(tweet);
-                Thread.Sleep(Timeout.Infinite);
+            }
+            if (gamecomplete)
+            {
+                AwaitTopOfHourAfterGame();
             }
             Console.WriteLine(tweet);
             Console.WriteLine(gamecomplete);
-            Thread.Sleep(Timeout.Infinite);
+        }
+
+        string GetPlayersByID(string id)
+        {
+
+            return "";
+        }
+
+        public static void AwaitTopOfHourAfterGame()
+        {
+            Console.WriteLine("Awaiting top of the hour...");
+        anotherone:
+            DateTime time = DateTime.Now;
+            int currentminute = time.Minute;
+            if (currentminute != 0)
+            {
+                goto anotherone;
+            }
+            GameSetup();
         }
 
         static async Task TwitterAuth()
         {
-            string consumerkey = File.ReadAllText("secure/consumerkey.txt").Trim();
-            string consumerkeysecret = File.ReadAllText("secure/consumersecretkey.txt").Trim();
-            var appClient = new TwitterClient($"{consumerkey}", $"{consumerkeysecret}");
-            var authenticationRequest = await appClient.Auth.RequestAuthenticationUrlAsync();
-            Process.Start(new ProcessStartInfo(authenticationRequest.AuthorizationURL)
-            {
-                UseShellExecute = true
-            });
-
-            Console.WriteLine("Please enter the PIN from the URL on the target account.");
+                string consumerkey = File.ReadAllText("secure/consumerkey.txt").Trim();
+                string consumerkeysecret = File.ReadAllText("secure/consumersecretkey.txt").Trim();
+                var appClient = new TwitterClient($"{consumerkey}", $"{consumerkeysecret}");
+                var authenticationRequest = await appClient.Auth.RequestAuthenticationUrlAsync();
+                Process.Start(new ProcessStartInfo(authenticationRequest.AuthorizationURL)
+                {
+                    UseShellExecute = true
+                });
+                Console.WriteLine("Please enter the PIN from the URL on the target account.");
             File.WriteAllText("secure/pin.txt", Console.ReadLine());
-            string pinCode = File.ReadAllText("secure/pin.txt");
-            var userCredentials = await appClient.Auth.RequestCredentialsFromVerifierCodeAsync(pinCode, authenticationRequest);
-            Thread.Sleep(50);
-            File.WriteAllText("secure/usercredentials.txt", $"{userCredentials.AccessToken}\n{userCredentials.AccessTokenSecret}");
+             string pinCode = File.ReadAllText("secure/pin.txt");
+                var userCredentials = await appClient.Auth.RequestCredentialsFromVerifierCodeAsync(pinCode, authenticationRequest);
+                File.WriteAllText("secure/usercredentials.txt", $"{userCredentials.AccessToken}\n{userCredentials.AccessTokenSecret}");
+            GameSetup();
         }
         static async Task Tweeter(string tweet)
         {
@@ -463,16 +497,7 @@ namespace Blaseball_Twitter_Bot
                                  pinCode = Console.ReadLine();
                                  File.WriteAllText("secure/pin.txt", $"{pinCode}");
                              } */
-
-
-                // Ask the user to enter the pin code given by Twitter
                 pinCode = File.ReadAllText("secure/pin.txt");
-                //        File.WriteAllText("secure/pin.txt", $"{pinCode}");
-
-                // With this pin code it is now possible to get the credentials back from Twitter
-                //      var userCredentials = await appClient.Auth.RequestCredentialsFromVerifierCodeAsync(pinCode, authenticationRequest);
-
-                // You can now save those credentials or use them as followed
                 token = File.ReadAllLines("secure/usercredentials.txt")[0];
                 tokensecret = File.ReadAllLines("secure/usercredentials.txt")[1];
                 var userClient = new TwitterClient($"{consumerkey}", $"{consumerkeysecret}", $"{token}", $"{tokensecret}");
@@ -487,22 +512,16 @@ namespace Blaseball_Twitter_Bot
                 catch (TwitterException e)
                 {
                     Console.WriteLine(e.ToString());
+                    goto continueanyways;
                 }
-                catch (Exception e)
-                {
-                    // Other system exceptions like SocketExcepti
-                }
-
-                //    File.WriteAllText("secure/pin.txt", $"{pinCode}");
-                //  Thread.Sleep(100);
-                // pinCode = File.ReadAllText("secure/pin.txt");
+            continueanyways:;
             }
         }
         static void CreateConfig(string configname)
         {
             if (!File.Exists(configname))
             {
-                Console.WriteLine("Config file not found or incorrect text. Creating new config file...");
+                Console.WriteLine("Config file not found. Creating new config file...");
                 File.WriteAllText(configname, "Mexico City Wild Wings");
                 Console.WriteLine();
                 Console.WriteLine("Config file created. Please enter the exact team name of the team you want to find on the first line.");
@@ -512,35 +531,35 @@ namespace Blaseball_Twitter_Bot
                 Directory.CreateDirectory("secure");
                 File.Create("secure/consumerkey.txt").Close();
                 Console.WriteLine();
-                Console.WriteLine("Twitter consumer key config file created.");
+                Console.WriteLine("Twitter consumer key config file created. Please enter the consumer key of the Twitter app.");
             }
             if (!File.Exists("secure/consumersecretkey.txt"))
             {
                 Directory.CreateDirectory("secure");
                 File.Create("secure/consumersecretkey.txt").Close();
                 Console.WriteLine();
-                Console.WriteLine("Twitter secret consumer key config file created.");
+                Console.WriteLine("Twitter secret consumer key config file created. Please enter the secret consumer key of the Twitter app.");
             }
             if (!File.Exists("secure/token.txt"))
             {
                 Directory.CreateDirectory("secure");
                 File.Create("secure/token.txt").Close();
                 Console.WriteLine();
-                Console.WriteLine("Twitter token config file created.");
+                Console.WriteLine("Twitter token config file created. prolly dont need to touch this");
             }
             if (!File.Exists("secure/tokensecret.txt"))
             {
                 Directory.CreateDirectory("secure");
                 File.Create("secure/tokensecret.txt").Close();
                 Console.WriteLine();
-                Console.WriteLine("Twitter secret token config file created.");
+                Console.WriteLine("Twitter secret token config file created. prolly dont need to touch this");
             }
             if (!File.Exists("secure/pin.txt"))
             {
                 Directory.CreateDirectory("secure");
                 File.Create("secure/pin.txt").Close();
                 Console.WriteLine();
-                Console.WriteLine("OAuth Pin config file created. There is no need to edit this file.");
+                Console.WriteLine("OAuth Pin config file created. There is no need to edit this file as it'll be overwritten.");
             }
         }
     }
