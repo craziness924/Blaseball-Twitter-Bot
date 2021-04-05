@@ -8,7 +8,7 @@ using System.Diagnostics;
 using Tweetinvi.Exceptions;
 
 namespace Blaseball_Twitter_Bot
-{// finding the right game seems very broken
+{
     class Program
     {
         static async Task Main()
@@ -54,7 +54,7 @@ namespace Blaseball_Twitter_Bot
             //  string gameinfo = findingteaminfo[0];
 
             string hackyfindingidstring = "";
-      //  tryidagain:
+            //  tryidagain:
             string[] findingid = walter.Split("\"id\":\"");
             playfinderindex = FindIDOfGame(findingid, desiredteam);
             /*   for (; !findingid[playfinderindex].Contains($"{desiredteam}") && playfinderindex < findingid.Length - 1; ) 
@@ -78,23 +78,24 @@ namespace Blaseball_Twitter_Bot
                 }te
             } */
             Console.WriteLine("stupid moment");
-//        IDfound:
+            //        IDfound:
 
-            string[] gameid = findingid[playfinderindex].Split("\","); 
+            string[] gameid = findingid[playfinderindex].Split("\",");
 
-            Console.WriteLine($"Id: {gameid[0]}\nTarget Team: {desiredteam}"); 
-       //     Console.WriteLine($"Start finding latest events from game {gameid[0]}? Type 'end' when the game is over.");
-       //     string startquestion = Console.ReadLine().ToLower();
-       //     if (startquestion.Contains("yes"))
-         //   {
-                LiveGame(gameid);
-                Console.WriteLine("Starting the things!");
-   
-          //  }
-     /*       else
-            {
-                Console.WriteLine("Press any key to exit..");
-            } */
+            Console.WriteLine($"Id: {gameid[0]}\nTarget Team: {desiredteam}");
+            //     Console.WriteLine($"Start finding latest events from game {gameid[0]}? Type 'end' when the game is over.");
+            //     string startquestion = Console.ReadLine().ToLower();
+            //     if (startquestion.Contains("yes"))
+            //   {
+            
+            Console.WriteLine("Starting the things!");
+
+            //  }
+            /*       else
+                   {
+                       Console.WriteLine("Press any key to exit..");
+                   } */
+            LiveGame(gameid);
         }
         static int FindIDOfGame(string[] findingid, string desiredteam)
         {
@@ -180,31 +181,36 @@ namespace Blaseball_Twitter_Bot
             awayPitcher = awayPitcher.Split("\"")[1];
             // end pitching finders
             string[] scoreUpdate = gamebyidlog.Split("\"scoreUpdate\":");
-            scoreUpdate = gamebyidlog.Split(",");
+            scoreUpdate = scoreUpdate[1].Split(",");
             bool scoreOnPlay = false;
 
-            if (scoreUpdate[0].Contains("Run".ToLower()))
+            if (scoreUpdate[0].ToLower().Contains("Run".ToLower()))
             {
                 scoreOnPlay = true;
                 scorer = lastevent[0].Split("hits")[0];
+                
             }
-            Console.WriteLine($"Home: {hometeam}\nAway: {awayteam}\nHome Score: {homescore}\nAway Score: {awayscore}\nHome Pitcher: {homePitcher}\nAway Pitcher: {awayPitcher}");
-            if (hometeam.Contains($"{desiredteam}".ToLower()) || hometeam.Contains($"{desiredteam}".ToLower()))
+            Console.WriteLine($"");
+            if (hometeam.ToLower().Contains($"{desiredteam}".ToLower()) || awayteam.ToLower().Contains($"{desiredteam}".ToLower()))
             {
                 if (!gamecomplete)
                 {
                     if (lastevent[0].ToLower().Equals(lasteventsimilaritycheck.ToLower()))
                     {
-                        Console.WriteLine("Last event and current event are the same! Skipping.");
+                       // Console.WriteLine("Last event and current event are the same! Skipping.");
                         //  similaritycounter++;
-                        //   goto skipprint;
+                        Thread.Sleep(2000);
+                        
+                         goto anotherone;
 
                     }
                     else
                     {
+                    
                         lasteventsimilaritycheck = lastevent[0];
                         Console.WriteLine($"{lastevent[0]}");
                         StringMaker(currentinning, lastevent[0], hometeam, awayteam, homescore, awayscore, gamecomplete, awayPitcher, homePitcher, scoreOnPlay, scorer);
+                        Thread.Sleep(1500);
                         goto anotherone;
                     }
                 }
@@ -277,7 +283,7 @@ namespace Blaseball_Twitter_Bot
                      goto anotherone;
                  } */
         }
-        
+
         static void StringMaker(int inning, string lastevent, string hometeam, string awayteam, float homescore, float awayscore, bool gamecomplete, string awaypitcher, string homepitcher, bool scoreOnPlay, string scorer)
         {
             string tweet = "";
@@ -302,30 +308,30 @@ namespace Blaseball_Twitter_Bot
                         {
                             if (homescore > awayscore) // if wings are home and winning
                             {
-                                tweet = $"Inning {inning} is now an outing. Wings lead the {awayteam} by {homescore - awayscore}!";
+                                tweet = $"Inning {inning} is now an Outing. Wings lead the {awayteam} by {homescore - awayscore}!";
                             }
                             else if (awayscore > homescore) // if wings are home and losing
                             {
-                                tweet = $"Inning {inning} is now an outing. {awayteam} lead the Wings by {awayscore - homescore}.";
+                                tweet = $"Inning {inning} is now an Outing. {awayteam} lead the Wings by {awayscore - homescore}.";
                             }
                             else if (awayscore == homescore) // if wings home and tied
                             {
-                                tweet = $"Inning {inning} is now an outing. Wings and {awayteam} tied at {awayscore}!";
+                                tweet = $"Inning {inning} is now an Outing. Wings and {awayteam} tied at {awayscore}!";
                             }
                         }
                         else if (!isDesiredTeamHome)
                         {
                             if (awayscore > homescore) // if wings are away and winning
                             {
-                                tweet = $"Inning {inning} is now an outing. Wings lead the {hometeam} by {awayscore - homescore}.";
+                                tweet = $"Inning {inning} is now an Outing. Wings lead the {hometeam} by {awayscore - homescore}.";
                             }
                             else if (homescore > awayscore) // if wings are away and losing
                             {
-                                tweet = $"Inning {inning} is now an outing. Wings trail the {hometeam} by {homescore - awayscore}.";
+                                tweet = $"Inning {inning} is now an Outing. Wings trail the {hometeam} by {homescore - awayscore}.";
                             }
                             else if (awayscore == homescore) // if wings away and tied
                             {
-                                tweet = $"Inning {inning} is now an outing. Wings and {hometeam} tied at {awayscore}!";
+                                tweet = $"Inning {inning} is now an Outing. Wings and {hometeam} tied at {awayscore}!";
                             }
                         }
                     }
@@ -333,15 +339,15 @@ namespace Blaseball_Twitter_Bot
                     {
                         if (homescore > awayscore)
                         {
-                            tweet = $"Inning {inning} is now an outing. {hometeam} leads {awayteam} by {homescore - awayscore}!";
+                            tweet = $"Inning {inning} is now an Outing. {hometeam} leads {awayteam} by {homescore - awayscore}!";
                         }
                         else if (awayscore > homescore)
                         {
-                            tweet = $"Inning {inning} is now an outing. {awayteam} leads {hometeam} by {awayscore - homescore}!";
+                            tweet = $"Inning {inning} is now an Outing. {awayteam} leads {hometeam} by {awayscore - homescore}!";
                         }
                         else
                         {
-                            tweet = $"Inning {inning} is now an outing. {awayteam} and {hometeam} tied at {awayscore}!";
+                            tweet = $"Inning {inning} is now an Outing. {awayteam} and {hometeam} tied at {awayscore}!";
                         }
                     }
                 }
@@ -376,8 +382,12 @@ namespace Blaseball_Twitter_Bot
 
 
                 }
+                else 
+                {
+                    goto done;               
+                }
             }
-            else // if game is complete, does this stuff
+            else if (gamecomplete) // if game is complete, does this stuff
             {
                 if (inning == 9)
                 {
@@ -387,22 +397,22 @@ namespace Blaseball_Twitter_Bot
                         {
                             if (homescore > awayscore) // if wings win and are home
                             {
-                                tweet = $"WINGS WIN!\nFinal score:\n\nWings ({homepitcher}): {homescore}\n{awayteam} ({awaypitcher}): {awayscore}"; // could add how good our pitcher did or something here
+                                tweet = $"WINGS WIN!\n\nFinal score:\n\nWings ({homepitcher}): {homescore}\n{awayteam} ({awaypitcher}): {awayscore}"; // could add how good our pitcher did or something here
                             }
                             else if (homescore < awayscore) // if wings lose and are home
                             {
-                                tweet = $"Wings lose to the {awayteam}. \nFinal score:\n\nWings ({homepitcher}): {homescore}\n{awayteam} ({awaypitcher}): {awayscore}";
+                                tweet = $"Wings lose to the {awayteam}. \n\nFinal score:\n\nWings ({homepitcher}): {homescore}\n{awayteam} ({awaypitcher}): {awayscore}";
                             }
                         }
                         else if (!isDesiredTeamHome)
                         {
                             if (awayscore > homescore) // if wings win while away
                             {
-                                tweet = $"WINGS WIN! \nFinal score:\n\nWings ({awaypitcher}): {awayscore}\n{hometeam} ({homepitcher}): {homescore}";
+                                tweet = $"WINGS WIN! \n\nFinal score:\n\nWings ({awaypitcher}): {awayscore}\n{hometeam} ({homepitcher}): {homescore}";
                             }
                             else if (awayscore < homescore) // if wings lose while away
                             {
-                                tweet = $"Wings lose to the {hometeam}. \nFinal score:\n\nWings ({awaypitcher}): {awayscore}\n{hometeam} ({homepitcher}):{homescore}";
+                                tweet = $"Wings lose to the {hometeam}. \n\nFinal score:\n\nWings ({awaypitcher}): {awayscore}\n{hometeam} ({homepitcher}): {homescore}";
                             }
                         }
                     }
@@ -429,22 +439,22 @@ namespace Blaseball_Twitter_Bot
                     {
                         if (homescore > awayscore) // wings win at home during extra innings
                         {
-                            tweet = $"WINGS WIN in {inning} innings over the {awayteam}. \nFinal score:\n\nWings:{homescore}\n{awayteam}:{awayscore}";
+                            tweet = $"WINGS WIN in {inning} innings over the {awayteam}. \n\nFinal score:\n\nWings: {homescore}\n{awayteam}: {awayscore}";
                         }
                         else if (homescore < awayscore) // wings lose at home during extra innings
                         {
-                            tweet = $"Wings lose to the {awayteam} in {inning} innings. \nFinal score:\n\nWings:{homescore}\n{awayteam}:{awayscore}";
+                            tweet = $"Wings lose to the {awayteam} in {inning} innings. \n\nFinal score:\n\nWings: {homescore}\n{awayteam}: {awayscore}";
                         }
                     }
                     else if (!isDesiredTeamHome)
                     {
                         if (awayscore > homescore) // wings win as away team in extra innings
                         {
-                            tweet = $"WINGS WIN in {inning} innings over the {hometeam}. \n\nFinal score:\nWings:{awayscore}\n{hometeam}:{homescore}";
+                            tweet = $"WINGS WIN in {inning} innings over the {hometeam}. \n\nFinal score:\nWings: {awayscore}\n{hometeam}: {homescore}";
                         }
                         else if (awayscore < homescore) // wings lose as away in extra innings
                         {
-                            tweet = $"Wings lose to the {awayteam} in {inning} innings. \n\nFinal score:\nWings:{awayscore}\n{hometeam}:{homescore}";
+                            tweet = $"Wings lose to the {awayteam} in {inning} innings. \n\nFinal score:\nWings: {awayscore}\n{hometeam}: {homescore}";
                         }
                     }
                     else // general OT win messages if not a wings team
@@ -476,6 +486,8 @@ namespace Blaseball_Twitter_Bot
             }
             Console.WriteLine(tweet);
             Console.WriteLine(gamecomplete);
+        done:;
+            Thread.Sleep(1000);
         }
 
         string GetPlayersByID(string id)
@@ -491,12 +503,22 @@ namespace Blaseball_Twitter_Bot
             DateTime time = DateTime.Now;
             int currentminute = time.Minute;
             int currentsecond = time.Second;
-            if (currentminute != 0 && currentsecond != 5)
+            Thread.Sleep(500);
+            if (!(currentminute == 0))
             {
                 Thread.Sleep(1000);
                 goto anotherone;
             }
-            GameSetup();
+            else
+            {
+                GameSetup();
+            }
+            for (; currentminute != 0;)
+            {
+                
+                Thread.Sleep(1000);
+            }
+
         }
 
         static async Task TwitterAuth()
@@ -514,7 +536,17 @@ namespace Blaseball_Twitter_Bot
             string pinCode = File.ReadAllText("secure/pin.txt");
             var userCredentials = await appClient.Auth.RequestCredentialsFromVerifierCodeAsync(pinCode, authenticationRequest);
             File.WriteAllText("secure/usercredentials.txt", $"{userCredentials.AccessToken}\n{userCredentials.AccessTokenSecret}");
-            GameSetup();
+            Console.WriteLine();
+            Console.WriteLine("Would you like to wait until the next hour? Type yes if you would like to.");
+            if (Console.ReadLine().ToLower().Contains("yes"))
+            {
+                AwaitTopOfHourAfterGame();
+            }
+            else
+            {
+                GameSetup();
+            }
+
         }
         static async Task Tweeter(string tweet)
         {
@@ -522,65 +554,59 @@ namespace Blaseball_Twitter_Bot
             string consumerkeysecret = File.ReadAllText("secure/consumersecretkey.txt").Trim();
             string token = File.ReadAllText("secure/token.txt").Trim();
             string tokensecret = File.ReadAllText("secure/tokensecret.txt").Trim();
-            Console.WriteLine("Prolly about to post tweet wanna do that?");
-            if (Console.ReadLine().ToLower().Contains("yes"))
-            {
-                string pinCode = "";
-                // Create a client for your app
-                var appClient = new TwitterClient($"{consumerkey}", $"{consumerkeysecret}");
+            string pinCode = "";
+            // Create a client for your app
+            var appClient = new TwitterClient($"{consumerkey}", $"{consumerkeysecret}");
 
-                // Start the authentication process
-                var authenticationRequest = await appClient.Auth.RequestAuthenticationUrlAsync();
+            // Start the authentication process
+            var authenticationRequest = await appClient.Auth.RequestAuthenticationUrlAsync();
 
 
-                // Go to the URL so that Twitter authenticates the user and gives him a PIN code.
-                /*      if (File.Exists("secure/pin.txt"))
+            // Go to the URL so that Twitter authenticates the user and gives him a PIN code.
+            /*      if (File.Exists("secure/pin.txt"))
+                  {
+                      if (1 == 1)
                       {
-                          if (1 == 1)
+                          Process.Start(new ProcessStartInfo(authenticationRequest.AuthorizationURL)
                           {
-                              Process.Start(new ProcessStartInfo(authenticationRequest.AuthorizationURL)
-                              {
-                                  UseShellExecute = true
-                              });
-                              Console.WriteLine("Please enter the code and press enter.");
-                              pinCode = Console.ReadLine();
-                              File.WriteAllText("secure/pin.txt", pinCode);
-                          }
-                          /*       else
-                                 {
-                                     pinCode = File.ReadAllText("secure/pin.txt");
-                                 }
-
-                             }
-                             else
+                              UseShellExecute = true
+                          });
+                          Console.WriteLine("Please enter the code and press enter.");
+                          pinCode = Console.ReadLine();
+                          File.WriteAllText("secure/pin.txt", pinCode);
+                      }
+                      /*       else
                              {
-                                 Process.Start(new ProcessStartInfo(authenticationRequest.AuthorizationURL)
-                                 {
-                                     UseShellExecute = true
-                                 });
-                                 Console.WriteLine("Please enter pin code and hit enter.");
-                                 pinCode = Console.ReadLine();
-                                 File.WriteAllText("secure/pin.txt", $"{pinCode}");
-                             } */
-                pinCode = File.ReadAllText("secure/pin.txt");
-                token = File.ReadAllLines("secure/usercredentials.txt")[0];
-                tokensecret = File.ReadAllLines("secure/usercredentials.txt")[1];
-                var userClient = new TwitterClient($"{consumerkey}", $"{consumerkeysecret}", $"{token}", $"{tokensecret}");
-                var user = await userClient.Users.GetAuthenticatedUserAsync();
+                                 pinCode = File.ReadAllText("secure/pin.txt");
+                             }
 
-                Console.WriteLine("Congratulation you have authenticated the user: " + user);
-
-                try
-                {
-                    await userClient.Tweets.PublishTweetAsync($"{tweet}");
-                }
-                catch (TwitterException e)
-                {
-                    Console.WriteLine(e.ToString());
-                    goto continueanyways;
-                }
-            continueanyways:;
+                         }
+                         else
+                         {
+                             Process.Start(new ProcessStartInfo(authenticationRequest.AuthorizationURL)
+                             {
+                                 UseShellExecute = true
+                             });
+                             Console.WriteLine("Please enter pin code and hit enter.");
+                             pinCode = Console.ReadLine();
+                             File.WriteAllText("secure/pin.txt", $"{pinCode}");
+                         } */
+            pinCode = File.ReadAllText("secure/pin.txt");
+            token = File.ReadAllLines("secure/usercredentials.txt")[0];
+            tokensecret = File.ReadAllLines("secure/usercredentials.txt")[1];
+            var userClient = new TwitterClient($"{consumerkey}", $"{consumerkeysecret}", $"{token}", $"{tokensecret}");
+            Console.WriteLine($"\nSending following tweet: {tweet}");
+            var user = await userClient.Users.GetAuthenticatedUserAsync();
+            try
+            {
+                await userClient.Tweets.PublishTweetAsync($"{tweet}");
             }
+            catch (TwitterException e)
+            {
+                Console.WriteLine(e.ToString());
+                goto continueanyways;
+            }
+        continueanyways:;
         }
         static void CreateConfig(string configname)
         {
