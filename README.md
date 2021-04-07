@@ -9,3 +9,10 @@ This bot tweets about things that happen to a specific team in Blaseball.
 4. Run bot again and authorize it on the account you want to post to. Enter the pin into the console then click enter.
 5. Enter yes if you want to wait for the next hour.
 6. Should post tweets now.
+
+# Issues/To Be Added
+- Bot will do something funky on Siesta days. Adding check soon.
+- More events
+  - Incinerations
+  - Possibly custom phrases depending on who scored
+  - Blahaj
