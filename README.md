@@ -7,5 +7,5 @@ This bot tweets about things that happen to a specific team in Blaseball.
 2. Close the program and input your desired team in to "targetteam.txt" on line 1.
 3. Get your consumerkey and your consumer secret key and put it in their respective files in the secure directory.
 4. Run bot again and authorize it on the account you want to post to. Enter the pin into the console then click enter.
-5. Enter yes if you want to wait for the next hour or not.
+5. Enter yes if you want to wait for the next hour.
 6. Should post tweets now.
