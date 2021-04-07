@@ -12,6 +12,7 @@ This bot tweets about things that happen to a specific team in Blaseball.
 
 # Issues/To Be Added
 - Bot will do something funky on Siesta days. Adding check soon.
+- Bot misses events quite often, though it seeks to only be missing Outings.
 - More events
   - Incinerations
   - Possibly custom phrases depending on who scored
