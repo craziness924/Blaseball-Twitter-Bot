@@ -168,7 +168,7 @@ namespace Blaseball_Twitter_Bot
                     {
                         // Console.WriteLine("Last event and current event are the same! Skipping.");
                         //  similaritycounter++;
-                        Thread.Sleep(2000);
+                        Thread.Sleep(1800);
 
                         goto anotherone;
 
@@ -179,7 +179,7 @@ namespace Blaseball_Twitter_Bot
                         lasteventsimilaritycheck = lastevent[0];
                         Console.WriteLine($"{lastevent[0]}");
                         StringMaker(currentinning, lastevent[0], hometeam, awayteam, homescore, awayscore, gamecomplete, awayPitcher, homePitcher, scoreOnPlay, scorer);
-                        Thread.Sleep(1500);
+                        Thread.Sleep(2300);
                         goto anotherone;
                     }
                 }
@@ -222,12 +222,12 @@ namespace Blaseball_Twitter_Bot
                                 tweet = $"Inning {inning} is now an Outing. Wings lead the {awayteam} by {homescore - awayscore}! {homescore}-{awayscore}";
                                 goto tweet;
                             }
-                            if (awayscore > homescore) // if wings are home and losing
+                            else if (awayscore > homescore) // if wings are home and losing
                             {
                                 tweet = $"Inning {inning} is now an Outing. Wings trail the {awayteam} by {awayscore - homescore}. {homescore}-{awayscore}";
                                 goto tweet;
                             }
-                            if (awayscore == homescore) // if wings home and tied
+                            else if (awayscore == homescore) // if wings home and tied
                             {
                                 tweet = $"Inning {inning} is now an Outing. Wings and {awayteam} tied at {awayscore}!";
                                 goto tweet;
@@ -237,15 +237,15 @@ namespace Blaseball_Twitter_Bot
                         {
                             if (awayscore > homescore) // if wings are away and winning
                             {
-                                tweet = $"Inning {inning} is now an Outing. Wings lead the {hometeam} by {awayscore - homescore}. {awayscore}-{homescore}";
+                                tweet = $"Inning {inning} is now an Outing. Wings lead the {hometeam} by {awayscore - homescore}! {awayscore}-{homescore}";
                                 goto tweet;
                             }
-                            if (homescore > awayscore) // if wings are away and losing
+                            else if (homescore > awayscore) // if wings are away and losing
                             {
                                 tweet = $"Inning {inning} is now an Outing. Wings trail the {hometeam} by {homescore - awayscore}. {awayscore}-{homescore}";
                                 goto tweet;
                             }
-                            if (awayscore == homescore) // if wings away and tied
+                            else if (awayscore == homescore) // if wings away and tied
                             {
                                 tweet = $"Inning {inning} is now an Outing. Wings and {hometeam} tied at {awayscore}!";
                                 goto tweet;
@@ -257,14 +257,17 @@ namespace Blaseball_Twitter_Bot
                         if (homescore > awayscore)
                         {
                             tweet = $"Inning {inning} is now an Outing. {hometeam} leads {awayteam} by {homescore - awayscore}! {homescore}-{awayscore}";
+                            goto tweet;
                         }
                         else if (awayscore > homescore)
                         {
                             tweet = $"Inning {inning} is now an Outing. {awayteam} leads {hometeam} by {awayscore - homescore}! {homescore}-{awayscore}";
+                            goto tweet;
                         }
                         else
                         {
                             tweet = $"Inning {inning} is now an Outing. {awayteam} and {hometeam} tied at {awayscore}!";
+                            goto tweet;
                         }
                     }
                 }
@@ -272,6 +275,31 @@ namespace Blaseball_Twitter_Bot
                     {
 
                     } */
+                else if (lastevent.ToLower().Contains("consumers")) 
+                {
+                    Random rng = new Random();
+                    tweet = $"{lastevent}";
+                    int blahajcheck = rng.Next(20);
+                    if (blahajcheck == 1)
+                    {
+                        tweet = $"spinny https://media1.tenor.com/images/08ba0788f89138946d58a7544a9c192c/tenor.gif?itemid=18118200";
+                    }
+                    else
+                    {
+                        tweet = $"{lastevent}";
+                    }
+                    goto tweet;
+                }
+                else if (lastevent.ToLower().Contains("incinerated"))
+                {
+                    tweet = $"{lastevent} RIV.";
+                    goto tweet;
+                }
+                else if (lastevent.ToLower().Contains("observed"))
+                {
+                    tweet = $"{lastevent}";
+                    goto tweet;
+                }
                 if (scoreOnPlay) // do these things if there is a run scored
                 {
                     if (desiredteam.ToLower().Contains("Mexico City Wild Wings".ToLower())) // Feel free to customize for other teams
@@ -279,10 +307,12 @@ namespace Blaseball_Twitter_Bot
                         if (isDesiredTeamHome)
                         {
                             tweet = $"{lastevent} \n\nWings: {homescore}\n{awayteam}: {awayscore}";
+                            goto tweet;
                         }
-                        if (!isDesiredTeamHome)
+                        else if (!isDesiredTeamHome)
                         {
                             tweet = $"{lastevent} \n\nWings: {awayscore}\n{hometeam}: {homescore}";
+                            goto tweet;
                         }
                     }
                     else
@@ -290,10 +320,13 @@ namespace Blaseball_Twitter_Bot
                         if (isDesiredTeamHome)
                         {
                             tweet = $"{lastevent} \n\n{hometeam}: {homescore}\n{awayteam}: {awayscore}";
+                            goto tweet;
                         }
                         else
                         {
+
                             tweet = $"{lastevent} \n\n{awayteam}: {awayscore}\n{hometeam}: {homescore}";
+                            goto tweet;
                         }
                     }
 
